@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import javax.jcr.RepositoryException;
+import javax.xml.transform.TransformerConfigurationException;
 
 import org.apache.jackrabbit.vault.fs.api.Aggregate;
 import org.apache.jackrabbit.vault.fs.api.SerializationType;
@@ -53,9 +54,13 @@ public class DocViewSerializer implements Serializer {
      */
     public void writeContent(OutputStream out) throws IOException, RepositoryException {
         // build content handler and add filter in case of original xml files
-        XMLSerializer ser = new XMLSerializer(out, new DocViewFormat().getXmlOutputFormat());
-        DocViewSAXFormatter fmt = new DocViewSAXFormatter(aggregate, ser);
-        aggregate.walk(fmt);
+        try {
+            XMLSerializer ser = new XMLSerializer(out, new DocViewFormat().getXmlOutputFormat());
+            DocViewSAXFormatter fmt = new DocViewSAXFormatter(aggregate, ser);
+            aggregate.walk(fmt);
+        } catch (TransformerConfigurationException e) {
+            throw new IOException("Could not create transformer with configuration", e);
+        }
     }
 
     /**

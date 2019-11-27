@@ -34,6 +34,7 @@ import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerConfigurationException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.fs.api.FilterSet.Entry;
@@ -318,7 +319,7 @@ public class FSInstallState {
      */
     public void save(OutputStream out) throws IOException {
         try {
-            XMLSerializer ser = new XMLSerializer(out, new OutputFormat("xml", "UTF-8", true));
+            XMLSerializer ser = new XMLSerializer(out, new OutputFormat(4));
             ser.startDocument();
             AttributesImpl attrs = new AttributesImpl();
             attrs.addAttribute(null, null, ATTR_PACKAGE_ID, "CDATA", packageId.toString());
@@ -381,6 +382,8 @@ public class FSInstallState {
             ser.endDocument();
         } catch (SAXException e) {
             throw new IllegalStateException(e);
+        } catch (TransformerConfigurationException e) {
+            throw new IOException("Could not configure transformer", e);
         }
     }
 

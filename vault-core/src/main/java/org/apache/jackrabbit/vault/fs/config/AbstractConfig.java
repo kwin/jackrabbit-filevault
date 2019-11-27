@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerConfigurationException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.util.RejectingEntityResolver;
@@ -123,14 +124,14 @@ abstract public class AbstractConfig {
     }
     
     public void save(OutputStream out) throws IOException {
-        OutputFormat fmt = new OutputFormat("xml", "UTF-8", true);
-        fmt.setLineWidth(0);
-        fmt.setIndent(2);
-        XMLSerializer ser = new XMLSerializer(out, fmt);
         try {
+            OutputFormat fmt = new OutputFormat(2);
+            XMLSerializer ser = new XMLSerializer(out, fmt);
             write(ser);
         } catch (SAXException e) {
-            throw new IOException(e.toString());
+            throw new IOException(e.toString(), e);
+        } catch (TransformerConfigurationException e) {
+            throw new IOException("Could not configure transformer", e);
         }
     }
 

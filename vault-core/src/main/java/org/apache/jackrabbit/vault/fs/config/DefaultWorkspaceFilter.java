@@ -37,6 +37,7 @@ import javax.jcr.Session;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerConfigurationException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.util.Text;
@@ -490,7 +491,7 @@ public class DefaultWorkspaceFilter implements Dumpable, WorkspaceFilter {
     private void generateSource() {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            XMLSerializer ser = new XMLSerializer(out, new OutputFormat("xml", "UTF-8", true));
+            XMLSerializer ser = new XMLSerializer(out, new OutputFormat(4));
             ser.startDocument();
             AttributesImpl attrs = new AttributesImpl();
             attrs.addAttribute(null, null, ATTR_VERSION, "CDATA", String.valueOf(version));
@@ -536,6 +537,8 @@ public class DefaultWorkspaceFilter implements Dumpable, WorkspaceFilter {
             source = out.toByteArray();
         } catch (SAXException e) {
             throw new IllegalStateException(e);
+        } catch (TransformerConfigurationException e) {
+            throw new IllegalStateException("Could not configure transformer", e);
         }
     }
 

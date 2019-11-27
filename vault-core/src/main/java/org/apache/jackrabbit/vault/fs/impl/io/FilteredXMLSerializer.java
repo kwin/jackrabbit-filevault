@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.jcr.RepositoryException;
+import javax.xml.transform.TransformerConfigurationException;
 
 import org.apache.jackrabbit.vault.util.xml.serialize.OutputFormat;
 import org.apache.jackrabbit.vault.util.xml.serialize.XMLSerializer;
@@ -43,7 +44,7 @@ public class FilteredXMLSerializer extends XMLSerializer {
 
     private Filter filter = new DefaultFilter();
 
-    public FilteredXMLSerializer(OutputStream outputStream, OutputFormat outputFormat) throws RepositoryException {
+    public FilteredXMLSerializer(OutputStream outputStream, OutputFormat outputFormat) throws RepositoryException, TransformerConfigurationException {
         super(outputStream, outputFormat);
     }
 
@@ -75,14 +76,6 @@ public class FilteredXMLSerializer extends XMLSerializer {
             log.trace("Filtering: {" + namespaceURI + "}" + localName + " -> " + rawName);
         } else {
             super.endElement(namespaceURI, localName, rawName);
-        }
-    }
-
-    public void endElementIO(String namespaceURI, String localName, String rawName) throws IOException {
-        if (filter.isFilteredNamespace(namespaceURI) || filter.isFilteredRawName(rawName)) {
-            log.trace("Filtering: {" + namespaceURI + "}" + localName + " -> " + rawName);
-        } else {
-            super.endElementIO(namespaceURI, localName, rawName);
         }
     }
 
