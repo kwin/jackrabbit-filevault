@@ -41,14 +41,20 @@ import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
 import java.util.zip.Checksum;
 
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stax.StAXResult;
+import javax.xml.transform.stax.StAXSource;
+
 import org.apache.commons.io.IOUtils;
-import org.apache.jackrabbit.vault.util.xml.serialize.AttributeNameComparator;
+import org.apache.jackrabbit.vault.util.xml.serialize.FormattingXmlStreamWriter;
 import org.apache.jackrabbit.vault.util.xml.serialize.OutputFormat;
-import org.apache.jackrabbit.vault.util.xml.serialize.XMLSerializer;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.XMLReaderFactory;
+import org.apache.jackrabbit.vault.util.xml.serialize.SortedAttributesXmlStreamReader;
+import org.codehaus.stax2.XMLInputFactory2;
 
 /**
  * This class provides access to the commonly used doc view xml format and functionality that checks files for the format or reformats
@@ -60,11 +66,7 @@ public class DocViewFormat {
     private WeakReference<ByteArrayOutputStream> formattingBuffer;
 
     public DocViewFormat() {
-        format = new OutputFormat("xml", "UTF-8", true);
-        format.setIndent(4);
-        format.setLineWidth(0);
-        format.setBreakEachAttribute(true);
-        format.setSortAttributeNamesBy(AttributeNameComparator.INSTANCE);
+        format = new OutputFormat(4, true, 0);
     }
 
     /**
@@ -142,14 +144,23 @@ public class DocViewFormat {
                 buffer.reset();
             }
 
-            XMLSerializer serializer = new XMLSerializer(new CheckedOutputStream(buffer, formatted), format);
-            XMLReader reader = XMLReaderFactory.createXMLReader();
-            reader.setContentHandler(serializer);
-            reader.setDTDHandler(serializer);
-            reader.parse(new InputSource(in));
-
+            try (OutputStream out = new CheckedOutputStream(buffer, formatted);
+                 FormattingXmlStreamWriter writer = FormattingXmlStreamWriter.create(out, format)) {
+                XMLInputFactory2 factory = (XMLInputFactory2)XMLInputFactory.newInstance();
+                factory.setProperty(XMLInputFactory.IS_COALESCING, true);
+                factory.setProperty(XMLInputFactory2.P_REPORT_PROLOG_WHITESPACE, true);
+                factory.setProperty(XMLInputFactory2.P_REPORT_CDATA, false);
+                // sort attributes while reading
+                try (SortedAttributesXmlStreamReader reader = new SortedAttributesXmlStreamReader(factory.createXMLStreamReader(in))) {
+                    TransformerFactory tf = TransformerFactory.newInstance();
+                    Transformer t = tf.newTransformer();
+                    StAXSource source = new StAXSource(reader);
+                    StAXResult result = new StAXResult(writer);
+                    t.transform(source, result);
+                }
+            }
             return buffer.toByteArray();
-        } catch (SAXException ex) {
+        } catch (TransformerException | XMLStreamException | FactoryConfigurationError ex) {
             throw new IOException(ex);
         }
     }
