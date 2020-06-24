@@ -17,3 +17,5 @@
                   @jackrabbit-spi2dav-[0-9.]*.jar,\
                   @jackrabbit-jcr-client-[0-9.]*.jar,\
                   @jackrabbit-jcr2spi-[0-9.]*.jar
+Import-Package: javax.jcr;version="3.0.0",*
+                  
